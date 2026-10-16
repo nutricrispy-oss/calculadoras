@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14573f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Calculadora Múltiple by CR</title>
+<style>
+:root{--bg:#f2f6f3;--sf:#fff;--tx:#13221b;--mu:#5b6d64;--pr:#14573f;--hd:#14573f;--ln:#d9e3dd;--ac:#e3f0e8;--ic:#14573f}
+:root[data-t=d]{--bg:#0e1714;--sf:#16221d;--tx:#e5efe9;--mu:#93a89d;--pr:#1f7a57;--hd:#0f3b2c;--ln:#27382f;--ac:#1f3a2f;--ic:#6fd3a6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--hd);color:#fff;display:flex;align-items:center;gap:6px;padding:10px 10px;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+header h1{font-size:18px;margin:0;flex:1;font-weight:600}
+button{font:inherit;cursor:pointer}
+.ib{background:none;border:0;color:inherit;font-size:22px;width:42px;height:42px;border-radius:50%}
+main{max-width:600px;margin:0 auto;padding:14px 14px calc(24px + env(safe-area-inset-bottom,0px))}
+h2{font-size:14px;color:var(--mu);margin:18px 2px 8px;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{display:flex;align-items:center;gap:10px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px;color:inherit;text-decoration:none;font-weight:500}
+.tile i{font-style:normal;flex:none;width:36px;height:36px;border-radius:50%;background:var(--ac);color:var(--ic);display:grid;place-items:center;font-weight:700}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--mu);margin:10px 0 4px}
+label:first-child{margin-top:0}
+input,select{width:100%;font:inherit;padding:11px 12px;border:1px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--tx)}
+input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--pr);outline-offset:1px}
+.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+.btn{width:100%;background:var(--pr);color:#fff;border:0;border-radius:10px;padding:12px;font-weight:600;margin-top:10px}
+.btn2{width:100%;background:var(--ac);color:var(--ic);border:0;border-radius:10px;padding:10px;font-weight:600;margin-top:10px}
+.out{font-size:28px;font-weight:700;color:var(--ic);margin-top:12px;word-break:break-all}
+.out small{font-size:15px;font-weight:500;color:var(--mu)}
+.li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--ln)}
+.li:last-child{border:0}.li b{text-align:right;word-break:break-all}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.sum div{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:10px 12px}
+.sum small{display:block;color:var(--mu);font-size:12px}.sum b{font-size:17px;color:var(--ic)}
+.tw{overflow-x:auto;background:var(--sf);border:1px solid var(--ln);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--ln)}
+th{background:var(--ac);color:var(--ic);position:sticky;top:0}
+td:first-child,th:first-child{text-align:center}
+.disp{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:12px 14px;text-align:right;margin-bottom:10px;min-height:90px}
+#se{color:var(--mu);font-size:18px;word-break:break-all;min-height:26px}
+#sr{font-size:34px;font-weight:700;color:var(--ic);word-break:break-all}
+.pad{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.k{padding:14px 0;border-radius:10px;border:1px solid var(--ln);background:var(--sf);color:var(--tx);font-size:17px}
+.k.op{background:var(--ac);color:var(--ic)}.k.eq{background:var(--pr);color:#fff;border-color:var(--pr)}
+.k:active{filter:brightness(.9)}
+</style></head><body>
+<header><button class="ib" id="bk" aria-label="Volver">←</button><h1 id="ti"></h1><button class="ib" id="th" aria-label="Cambiar tema"></button></header>
+<main id="m"></main>
+<script>
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const LS={g(k,d){try{const v=localStorage.getItem('cmcr:'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},s(k,v){try{localStorage.setItem('cmcr:'+k,JSON.stringify(v))}catch(e){}}};
+const num=s=>{s=String(s).trim().replace(/\s/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if((s.match(/\./g)||[]).length>1)s=s.replace(/\./g,'');return s===''?NaN:Number(s)};
+const fmt=(n,d=8)=>{if(!isFinite(n))return'—';if(n!==0&&(Math.abs(n)>=1e15||Math.abs(n)<1e-7))return n.toExponential(6).replace('.',',');return n.toLocaleString('es-PY',{maximumFractionDigits:d})};
+const gs=n=>Math.round(n).toLocaleString('es-PY');
+const pad=n=>String(n).padStart(2,'0'),fd=d=>pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();
+const pd=s=>{const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s.trim());if(!m)return null;const d=new Date(+m[3],m[2]-1,+m[1]);return d.getMonth()==m[2]-1&&d.getDate()==+m[1]?d:null};
+const addD=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const addM=(d,n)=>{const r=new Date(d.getFullYear(),d.getMonth()+n,1);r.setDate(Math.min(d.getDate(),new Date(r.getFullYear(),r.getMonth()+1,0).getDate()));return r};
+// Campos de fecha: texto con teclado numérico (se escribe, sin selector nativo)
+const dateIn=(id,v)=>`<input class="dt" id="${id}" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa" maxlength="10" value="${fd(v)}">`;
+const wireDates=()=>$$('.dt').forEach(i=>i.addEventListener('input',()=>{let v=i.value.replace(/\D/g,'').slice(0,8);if(v.length>4)v=v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);else if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2);i.value=v}));
+
+const CV={
+moneda:{n:'Moneda',i:'¤',d:[0,1],u:'USD PYG BRL ARS EUR UYU CLP BOB COP PEN MXN GBP'.split(' ').map(k=>[k,1])},
+volumen:{n:'Volumen',i:'◫',d:[1,3],u:[['mL',.001],['L',1],['m³',1000],['galón (EE. UU.)',3.785411784],['galón (imp.)',4.54609],['taza (EE. UU.)',.2365882365],['onza líq. (EE. UU.)',.0295735296],['cucharada',.0147867648],['cucharadita',.00492892159],['pie³',28.316846592],['pulg³',.016387064]]},
+longitud:{n:'Longitud',i:'↔',d:[2,5],u:[['mm',.001],['cm',.01],['m',1],['km',1000],['pulgada',.0254],['pie',.3048],['yarda',.9144],['milla',1609.344],['milla náutica',1852]]},
+masa:{n:'Peso y masa',i:'⚖',d:[2,4],u:[['mg',1e-6],['g',.001],['kg',1],['tonelada',1000],['libra',.45359237],['onza',.028349523125],['quilate',.0002],['piedra (stone)',6.35029318]]},
+temperatura:{n:'Temperatura',i:'°',d:[0,1],u:[['°C'],['°F'],['K']]},
+energia:{n:'Energía',i:'⚡',d:[3,1],u:[['J',1],['kJ',1000],['caloría',4.184],['kcal',4184],['Wh',3600],['kWh',3.6e6],['BTU',1055.05585],['eV',1.602176634e-19],['pie·libra',1.3558179483]]},
+area:{n:'Área',i:'▦',d:[1,2],u:[['cm²',1e-4],['m²',1],['hectárea',1e4],['km²',1e6],['pulg²',6.4516e-4],['pie²',.09290304],['yarda²',.83612736],['acre',4046.8564224]]},
+velocidad:{n:'Velocidad',i:'➜',d:[1,2],u:[['m/s',1],['km/h',1/3.6],['mph',.44704],['nudo',1852/3600],['pie/s',.3048],['Mach',340.29]]},
+tiempo:{n:'Tiempo',i:'◷',d:[3,2],u:[['ms',.001],['s',1],['min',60],['hora',3600],['día',86400],['semana',604800],['mes',2629746],['año',31556952]]},
+potencia:{n:'Potencia',i:'⏻',d:[1,4],u:[['W',1],['kW',1000],['MW',1e6],['CV',735.49875],['HP',745.69987158],['BTU/h',.29307107]]},
+datos:{n:'Datos',i:'▤',d:[3,4],u:[['bit',.125],['B',1],['KB',1e3],['MB',1e6],['GB',1e9],['TB',1e12],['KiB',1024],['MiB',1048576],['GiB',1073741824],['TiB',1099511627776]]},
+presion:{n:'Presión',i:'◎',d:[4,1],u:[['Pa',1],['kPa',1000],['bar',1e5],['atm',101325],['psi',6894.757293168],['mmHg',133.322387415]]},
+angulo:{n:'Ángulo',i:'∠',d:[0,1],u:[['grado °',1],['radián',180/Math.PI],['gradián',.9],['vuelta',360],['minuto de arco',1/60]]}};
+const TOOLS={prestamo:['Préstamo','₲'],cientifica:['Científica','ƒ'],fechas:['Fechas','31']};
+const DEF={USD:1,PYG:7300,BRL:5.5,ARS:1100,EUR:.92,UYU:40,CLP:950,BOB:6.9,COP:4100,PEN:3.7,MXN:18,GBP:.78};
+const rates=()=>LS.g('rates',{r:DEF,t:''});
+let R='',ex='',ans=0,deg=true,done=false;
+
+function home(){
+ const t=(id,n,i)=>`<a class="tile" href="#${id}"><i>${i}</i>${n}</a>`;
+ $('#m').innerHTML=`<h2>Calculadoras</h2><div class="grid">${Object.entries(TOOLS).map(([k,v])=>t(k,v[0],v[1])).join('')}</div><h2>Conversores</h2><div class="grid">${Object.entries(CV).map(([k,v])=>t(k,v.n,v.i)).join('')}</div>`;
+}
+
+function loan(){
+ $('#m').innerHTML=`<div class="card"><label>Importe del préstamo (Gs.)</label><input id="lp" inputmode="numeric" value="20.000.000">
+ <div class="row"><div><label>Tasa de interés anual (%)</label><input id="lr" inputmode="decimal" value="18,5"></div><div><label>Frecuencia de pago</label><select id="lf"><option value="12">Mensual</option><option value="24">Quincenal</option><option value="52">Semanal</option></select></div></div>
+ <div class="row"><div><label>Plazo</label><input id="lt" inputmode="numeric" value="1"></div><div><label>Unidad</label><select id="lu"><option value="12">Años</option><option value="1">Meses</option></select></div></div>
+ <div class="row"><div><label>Sistema</label><select id="ls"><option value="f">Cuota fija</option><option value="a">Capital fijo</option></select></div><div><label>Fecha de inicio</label>${dateIn('ld',new Date())}</div></div></div><div id="lo"></div>`;
+ wireDates();
+ const calc=()=>{
+  const P=parseInt($('#lp').value.replace(/\D/g,''))||0,Rt=num($('#lr').value)||0,p=+$('#lf').value,n=Math.round((num($('#lt').value)||0)*$('#lu').value*p/12),sd=pd($('#ld').value),fix=$('#ls').value=='f';
+  if(!P||!n||!sd){$('#lo').innerHTML='<div class="card">Completa importe, plazo y una fecha válida (dd/mm/aaaa).</div>';return}
+  const r=Rt/100/p,pay=fix?(r?P*r/(1-Math.pow(1+r,-n)):P/n):0;let bal=P,rows='',ti=0,first=0;
+  for(let k=1;k<=n;k++){const it=bal*r,pr=fix?pay-it:P/n,pg=pr+it,d=p==12?addM(sd,k):addD(sd,(p==24?15:7)*k),end=k==n?0:bal-pr;if(k==1)first=pg;ti+=it;
+   rows+=`<tr><td>${k}<td>${fd(d)}<td>${gs(bal)}<td>${gs(pg)}<td>${gs(pr)}<td>${gs(it)}<td>${gs(end)}`;bal=end}
+  const nm={12:'mensual',24:'quincenal',52:'semanal'}[p];
+  $('#lo').innerHTML=`<div class="sum"><div><small>${fix?'Pago '+nm:'Primer pago'}</small><b>Gs. ${gs(first)}</b></div><div><small>Número de pagos</small><b>${n}</b></div><div><small>Total de intereses</small><b>Gs. ${gs(ti)}</b></div><div><small>Costo total</small><b>Gs. ${gs(P+ti)}</b></div></div>
+  <div class="tw"><table><thead><tr><th>N.º<th>Fecha de pago<th>Saldo inicial<th>Pago<th>Capital<th>Interés<th>Saldo final</thead><tbody>${rows}</tbody></table></div>`;
+ };
+ $$('#m input,#m select').forEach(e=>e.addEventListener('input',()=>{if(e.id=='lp')e.value=e.value.replace(/\D/g,'').replace(/\B(?=(\d{3})+(?!\d))/g,'.');calc()}));
+ calc();
+}
+
+function fechas(){
+ const t=new Date();
+ $('#m').innerHTML=`<div class="card"><b>Diferencia entre fechas</b><label>Desde</label>${dateIn('f1',t)}<label>Hasta</label>${dateIn('f2',addD(t,30))}<div id="fo"></div></div>
+ <div class="card"><b>Sumar o restar</b><label>Fecha</label>${dateIn('f3',t)}
+ <div class="row"><div><label>Operación</label><select id="fs"><option value="1">Sumar</option><option value="-1">Restar</option></select></div><div><label>Años</label><input id="fy" inputmode="numeric" value="0"></div></div>
+ <div class="row"><div><label>Meses</label><input id="fm" inputmode="numeric" value="0"></div><div><label>Días</label><input id="fd" inputmode="numeric" value="30"></div></div><div class="out" id="fr" style="font-size:20px"></div></div>`;
+ wireDates();
+ const upd=()=>{
+  let a=pd($('#f1').value),b=pd($('#f2').value);
+  if(!a||!b)$('#fo').innerHTML='<p>Escribe fechas válidas (dd/mm/aaaa).</p>';
+  else{if(a>b)[a,b]=[b,a];let y=b.getFullYear()-a.getFullYear(),m=b.getMonth()-a.getMonth(),d=b.getDate()-a.getDate();
+   if(d<0){m--;d+=new Date(b.getFullYear(),b.getMonth(),0).getDate()}if(m<0){y--;m+=12}
+   const days=Math.round((b-a)/864e5);let h=0;for(let i=0,x=new Date(a);i<days;i++,x=addD(x,1)){const w=x.getDay();if(w&&w<6)h++}
+   $('#fo').innerHTML=`<div class="out" style="font-size:20px">${y} años, ${m} meses, ${d} días</div><div class="li"><span>Total de días</span><b>${fmt(days)}</b></div><div class="li"><span>Semanas</span><b>${Math.floor(days/7)} sem. y ${days%7} d.</b></div><div class="li"><span>Días hábiles (lun–vie)</span><b>${fmt(h)}</b></div>`}
+  const c=pd($('#f3').value),s=+$('#fs').value,Y=parseInt($('#fy').value)||0,M=parseInt($('#fm').value)||0,D=parseInt($('#fd').value)||0;
+  $('#fr').textContent=c?addD(addM(c,s*(Y*12+M)),s*D).toLocaleString('es-PY',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'Fecha no válida';
+ };
+ $$('#m input,#m select').forEach(e=>e.addEventListener('input',upd));upd();
+}
+
+function convPage(id){
+ const c=CV[id],T=id=='temperatura';let U=c.u;
+ if(id=='moneda'){const r=rates().r;U=c.u.map(([k])=>[k,1/r[k]])}
+ const toC=(v,u)=>u==0?v:u==1?(v-32)*5/9:v-273.15,fromC=(v,u)=>u==0?v:u==1?v*9/5+32:v+273.15;
+ const cv=(v,a,b)=>T?fromC(toC(v,a),b):v*U[a][1]/U[b][1];
+ const o=U.map((x,i)=>`<option value="${i}">${x[0]}</option>`).join('');
+ $('#m').innerHTML=`<div class="card"><label>Valor</label><input id="v" inputmode="decimal" value="1"><div class="row"><div><label>De</label><select id="a">${o}</select></div><div><label>A</label><select id="b">${o}</select></div></div><button class="btn2" id="sw">⇄ Invertir</button><div class="out" id="o"></div></div><div class="card" id="al"></div>
+ ${id=='moneda'?`<div class="card"><small id="rt"></small><button class="btn" id="up">Actualizar tasas</button></div>`:''}`;
+ $('#a').value=c.d[0];$('#b').value=c.d[1];
+ const upd=()=>{const v=num($('#v').value),a=+$('#a').value,b=+$('#b').value;
+  $('#o').innerHTML=isNaN(v)?'—':`${fmt(cv(v,a,b))} <small>${U[b][0]}</small>`;
+  $('#al').innerHTML=isNaN(v)?'':U.map((x,i)=>`<div class="li"><span>${x[0]}</span><b>${fmt(cv(v,a,i))}</b></div>`).join('')};
+ $$('#m input,#m select').forEach(e=>e.addEventListener('input',upd));
+ $('#sw').onclick=()=>{const a=$('#a').value;$('#a').value=$('#b').value;$('#b').value=a;upd()};
+ upd();
+ if(id=='moneda'){const rt=rates();$('#rt').textContent=rt.t?'Tasas actualizadas el '+rt.t+'.':'Tasas de referencia aproximadas. Toca «Actualizar tasas» con internet para usar valores del día.';
+  $('#up').onclick=async()=>{$('#rt').textContent='Actualizando…';try{const j=await(await fetch('https://open.er-api.com/v6/latest/USD')).json(),r={};Object.keys(DEF).forEach(k=>r[k]=j.rates[k]||DEF[k]);LS.s('rates',{r,t:fd(new Date())});convPage(id)}catch(e){$('#rt').textContent='No se pudo actualizar. Revisa tu conexión; se siguen usando las últimas tasas guardadas.'}}}
+}
+
+const FN={sin:x=>Math.sin(deg?x*Math.PI/180:x),cos:x=>Math.cos(deg?x*Math.PI/180:x),tan:x=>Math.tan(deg?x*Math.PI/180:x),asin:x=>Math.asin(x)*(deg?180/Math.PI:1),acos:x=>Math.acos(x)*(deg?180/Math.PI:1),atan:x=>Math.atan(x)*(deg?180/Math.PI:1),ln:Math.log,log:Math.log10,sqrt:Math.sqrt,fact:n=>{if(n<0||n%1)return NaN;if(n>170)return Infinity;let r=1;for(let i=2;i<=n;i++)r*=i;return r}};
+function ev(s){
+ s=s.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/π/g,'(PI)').replace(/ℯ/g,'(E)').replace(/Ans/g,'(ANS)').replace(/√\(/g,'sqrt(');
+ s=s.replace(/(\d+(?:\.\d+)?|\([^()]*\))!/g,'fact($1)').replace(/%/g,'/100').replace(/\^/g,'**').replace(/(\d|\))(?=\(|[a-zA-Z])/g,'$1*');
+ s+=')'.repeat(Math.max(0,(s.match(/\(/g)||[]).length-(s.match(/\)/g)||[]).length));
+ if(!/^[\d+\-*/().\s]*$/.test(s.replace(/asin|acos|atan|sin|cos|tan|ln|log|sqrt|fact|PI|E|ANS/g,'')))throw 0;
+ const r=new Function('sin','cos','tan','asin','acos','atan','ln','log','sqrt','fact','PI','E','ANS','"use strict";return('+s+')')(FN.sin,FN.cos,FN.tan,FN.asin,FN.acos,FN.atan,FN.ln,FN.log,FN.sqrt,FN.fact,Math.PI,Math.E,ans);
+ if(typeof r!='number'||isNaN(r))throw 0;return parseFloat(r.toPrecision(12));
+}
+function sci(){
+ const K=[['Deg','deg','op'],['sin','sin(','op'],['cos','cos(','op'],['tan','tan(','op'],['⌫','bs','op'],
+ ['π','π','op'],['asin','asin(','op'],['acos','acos(','op'],['atan','atan(','op'],['C','c','op'],
+ ['e','ℯ','op'],['ln','ln(','op'],['log','log(','op'],['√','√(','op'],['x²','^2','op'],
+ ['(','(','op'],[')',')','op'],['n!','!','op'],['xʸ','^','op'],['÷','÷','op'],
+ ['7','7'],['8','8'],['9','9'],['%','%','op'],['×','×','op'],
+ ['4','4'],['5','5'],['6','6'],['Ans','Ans','op'],['−','−','op'],
+ ['1','1'],['2','2'],['3','3'],['10ˣ','10^(','op'],['+','+','op'],
+ ['0','0',,2],['.','.'],['=','=','eq',2]];
+ $('#m').innerHTML=`<div class="disp"><div id="se"></div><div id="sr"></div></div><div class="pad">${K.map(k=>`<button class="k ${k[2]||''}" data-a="${k[1]}" ${k[3]?`style="grid-column:span ${k[3]}"`:''} ${k[1]=='deg'?'id="dg"':''}>${k[0]}</button>`).join('')}</div>`;
+ $$('.k').forEach(b=>b.onclick=()=>press(b.dataset.a));show();
+}
+function press(a){
+ if(a=='deg')deg=!deg;
+ else if(a=='c'){ex='';done=false}
+ else if(a=='bs')ex=ex.replace(/(asin\(|acos\(|atan\(|sin\(|cos\(|tan\(|ln\(|log\(|√\(|Ans|.)$/,'');
+ else if(a=='='){try{ans=ev(ex);ex=String(ans).includes('e')?'':String(ans);done=true}catch(e){$('#sr').textContent='Error';return}}
+ else{if(done&&/^([\d.πℯA(]|[a-z√])/.test(a))ex='';done=false;ex+=a}
+ show();
+}
+function show(){
+ $('#se').textContent=ex||'0';$('#dg').textContent=deg?'Deg':'Rad';
+ let p='';try{if(ex&&!/^[\d.]+$/.test(ex))p=fmt(ev(ex),10)}catch(e){}$('#sr').textContent=p;
+}
+document.addEventListener('keydown',e=>{
+ if(R!='cientifica'||e.target.matches('input,select')||e.ctrlKey||e.metaKey)return;
+ const k=e.key,m={'*':'×','/':'÷','-':'−','Enter':'=','=':'=','Backspace':'bs','Escape':'c'};
+ if(/^[\d.+()^!%]$/.test(k)||m[k]){e.preventDefault();press(m[k]||k)}
+});
+
+let th=LS.g('theme',matchMedia('(prefers-color-scheme:dark)').matches?'d':'l');
+const applyTheme=()=>{document.documentElement.dataset.t=th;$('#th').textContent=th=='d'?'☀':'☾';$('meta[name=theme-color]').content=th=='d'?'#0f3b2c':'#14573f'};
+$('#th').onclick=()=>{th=th=='d'?'l':'d';LS.s('theme',th);applyTheme()};
+$('#bk').onclick=()=>{location.hash=''};
+function route(){
+ R=location.hash.slice(1);const home_=!R||!(TOOLS[R]||CV[R]);
+ $('#bk').style.visibility=home_?'hidden':'visible';
+ $('#ti').textContent=home_?'Calculadora Múltiple by CR':(TOOLS[R]?TOOLS[R][0]:CV[R].n);
+ scrollTo(0,0);
+ if(home_)home();else if(R=='prestamo')loan();else if(R=='cientifica')sci();else if(R=='fechas')fechas();else convPage(R);
+}
+addEventListener('hashchange',route);applyTheme();route();
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script></body></html>
